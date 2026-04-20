@@ -93,7 +93,7 @@ def is_market_hours():
 
     return start <= now <= end
  
-STATE_FILE = "bot_state.json"
+STATE_FILE = "data/bot_state.json"
 
 def save_state():
     try:
