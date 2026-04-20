@@ -55,8 +55,8 @@ MONITOR_INTERVAL       = 90    # Thread 2: check prices every 90s
 TIMEZONE               = "US/Central"
 
 # Alpaca
-client = StockHistoricalDataClient("ALPACA_API_KEY",  "ALPACA_API_SECRET")
-trading_client=TradingClient("ALPACA_API_KEY",  "ALPACA_API_SECRET")
+client = StockHistoricalDataClient(ALPACA_API_KEY,  ALPACA_API_SECRET)
+trading_client=TradingClient(ALPACA_API_KEY,  ALPACA_API_SECRET)
 
 # Profit alert thresholds
 FIRST_ALERT            = 800
