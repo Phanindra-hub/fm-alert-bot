@@ -19,7 +19,7 @@ RULES:
   - Alert ladder: $800 → +$300 steps to $2000 → +$500 steps beyond
 
 REQUIRES:
-  pip install alpaca-py requests pytz
+  pip install alpaca-py requests pytz 
 """
 
  
