@@ -44,15 +44,17 @@ from alpaca.trading.enums import QueryOrderStatus
  
 
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_ID = os.getenv("CHANNEL_ID")
+BOT_TOKEN      = os.getenv("BOT_TOKEN")
+SOURCE_CHANNEL = os.getenv("SOURCE_CHANNEL") #"-1003719728720" # bot READS trade picks from here
+ALERT_CHANNEL  = os.getenv("ALERT_CHANNEL")   # bot SENDS profit alerts here
 
-ALPACA_API_KEY = os.getenv("ALPACA_API_KEY")
+ALPACA_API_KEY    = os.getenv("ALPACA_API_KEY")
 ALPACA_API_SECRET = os.getenv("ALPACA_API_SECRET")
 
-LISTENER_INTERVAL      = 60    # Thread 1: check Telegram every 60s
-MONITOR_INTERVAL       = 90    # Thread 2: check prices every 90s
-TIMEZONE               = "US/Central"
+LISTENER_INTERVAL  = 60    # Thread 1: check Telegram every 60s
+MONITOR_INTERVAL   = 90    # Thread 2: check prices every 90s
+TIMEZONE           = "US/Central"
+MAX_PICK_AGE_DAYS  = 20    # Auto-remove picks older than this many days
 
 # Alpaca
 client = StockHistoricalDataClient(ALPACA_API_KEY,  ALPACA_API_SECRET)
@@ -89,7 +91,7 @@ def is_market_hours():
     now = datetime.now(cst)
 
     start = now.replace(hour=3, minute=1, second=0, microsecond=0)
-    end   = now.replace(hour=19, minute=59, second=0, microsecond=0)
+    end   = now.replace(hour=18, minute=59, second=0, microsecond=0)
 
     return start <= now <= end
  
@@ -149,7 +151,7 @@ def extend_ladder(idx):
 
 def send_telegram_message(message: str):
     url     = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": CHANNEL_ID, "text": message, "parse_mode": "HTML"}
+    payload = {"chat_id": ALERT_CHANNEL, "text": message, "parse_mode": "HTML"}
     try:
         resp = requests.post(url, json=payload, timeout=10)
         if resp.status_code != 200:
@@ -331,6 +333,7 @@ def add_to_watchlist(trade: dict):
             "entry":          trade["entry"],
             "qty":            trade["qty"],
             "buy_date":       trade["buy_date"],
+            "buy_date_raw":   datetime.now(pytz.timezone(TIMEZONE)).strftime("%Y-%m-%d"),
             "update_id":      update_id,
             "next_alert_idx": 0,
             "high_water":     0.0,
@@ -354,6 +357,42 @@ def add_to_watchlist(trade: dict):
     save_state()
  
 # ─────────────────────────────────────────────
+#  Auto-purge picks older than MAX_PICK_AGE_DAYS
+# ─────────────────────────────────────────────
+
+def purge_old_picks():
+    cst     = pytz.timezone(TIMEZONE)
+    today   = datetime.now(cst).date()
+    removed = []
+
+    with watchlist_lock:
+        for ticker, cfg in list(WATCHLIST.items()):
+            raw = cfg.get("buy_date_raw")
+            if not raw:
+                continue
+            try:
+                pick_date = datetime.strptime(raw, "%Y-%m-%d").date()
+                age_days  = (today - pick_date).days
+                if age_days >= MAX_PICK_AGE_DAYS:
+                    del WATCHLIST[ticker]
+                    removed.append((ticker, age_days))
+            except Exception as e:
+                print(f"[WARN] Could not parse date for {ticker}: {e}")
+
+    for ticker, age in removed:
+        print(f"  🗑️  Removed {ticker} — {age} days old (limit: {MAX_PICK_AGE_DAYS})")
+        send_telegram_message(
+            f"🗑️ <b>Pick Expired — {ticker}</b>\n\n"
+            f"Automatically removed after <b>{age} days</b> "
+            f"(limit: {MAX_PICK_AGE_DAYS} days).\n\n"
+            f"#FortuneMarkers #{ticker}"
+        )
+
+    if removed:
+        save_state()
+
+
+# ─────────────────────────────────────────────
 #  THREAD 1 — Telegram Listener
 # ─────────────────────────────────────────────
 
@@ -374,12 +413,20 @@ def telegram_listener():
                     post = update.get("channel_post") or update.get("message")
 
                     if post and post.get("text"):
+                        # ── Only process posts from SOURCE_CHANNEL ──────
+                        chat_id = str(post.get("chat", {}).get("id"))
+
+                        if chat_id != str(SOURCE_CHANNEL):
+                            print(f"  [Listener] Skipped — {chat_id} is not source channel")
+                            last_update_id = uid
+                            continue
+
                         raw_text = post["text"]
                         ts       = datetime.fromtimestamp(
                                        post["date"], pytz.utc
                                    ).astimezone(cst).strftime("%b %d, %Y %I:%M %p")
 
-                        print(f"\n[Listener] New message at {ts}:")
+                        print(f"\n[Listener] New message from SOURCE at {ts}:")
                         print(f"  → {raw_text[:]}")
 
                         trade = parse_trade(raw_text, uid)
@@ -392,6 +439,9 @@ def telegram_listener():
 
         except Exception as e:
             print(f"[Listener ERROR] {e}")
+
+        # Auto-purge picks older than MAX_PICK_AGE_DAYS
+        purge_old_picks()
 
         time.sleep(LISTENER_INTERVAL)
  
@@ -517,7 +567,9 @@ def main():
     print(f"\n  Alert ladder: {preview} → ...")
     print(f"\n  Listener interval : {LISTENER_INTERVAL}s")
     print(f"  Monitor interval  : {MONITOR_INTERVAL}s")
-    print(f"  Channel           : {CHANNEL_ID}")
+    print(f"  Source channel    : {SOURCE_CHANNEL}  ← reads trade picks")
+    print(f"  Alert channel     : {ALERT_CHANNEL}   ← sends profit alerts")
+    print(f"  Max pick age      : {MAX_PICK_AGE_DAYS} days (auto-purge)")
     """
     send_telegram_message(
         f"🤖 <b>FM Two-Threaded Alert Bot is LIVE!</b>\n\n"
