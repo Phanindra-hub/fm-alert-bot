@@ -62,8 +62,8 @@ trading_client=TradingClient(ALPACA_API_KEY,  ALPACA_API_SECRET)
 
 # Profit alert thresholds
 FIRST_ALERT            = 800
-TIER2_STEP             = 300
-TIER2_MAX              = 2000
+TIER2_STEP             = 200
+TIER2_MAX              = 3000
 TIER3_STEP             = 500
  
 watchlist_lock = threading.Lock()
