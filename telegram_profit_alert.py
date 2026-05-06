@@ -182,6 +182,8 @@ def acknowledge_update(update_id: int):
 # ─────────────────────────────────────────────
 
 def get_current_price(ticker: str):
+    if ticker=='AMD':
+        return None
     try:
         pos   = trading_client.get_open_position(ticker)
         price = round(float(pos.market_value) / float(pos.qty), 2)
