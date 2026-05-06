@@ -66,7 +66,7 @@ TIER2_STEP             = 200
 TIER2_MAX              = 2000
 TIER3_STEP             = 500
 TIER3_MAX              = 10000
-TIER3_STEP             = 1000
+TIER4_STEP             = 1000
  
 watchlist_lock = threading.Lock()
 
