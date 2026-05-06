@@ -63,8 +63,10 @@ trading_client=TradingClient(ALPACA_API_KEY,  ALPACA_API_SECRET)
 # Profit alert thresholds
 FIRST_ALERT            = 800
 TIER2_STEP             = 200
-TIER2_MAX              = 3000
+TIER2_MAX              = 2000
 TIER3_STEP             = 500
+TIER3_MAX              = 10000
+TIER3_STEP             = 1000
  
 watchlist_lock = threading.Lock()
 
@@ -133,9 +135,13 @@ def build_alert_levels(max_profit=50000):
         levels.append(level)
         level += TIER2_STEP
     level = TIER2_MAX + TIER3_STEP
-    while level <= max_profit:
+    while level <= TIER3_MAX:
         levels.append(level)
         level += TIER3_STEP
+    level = TIER3_MAX + TIER4_STEP
+    while level <= max_profit:
+        levels.append(level)
+        level += TIER4_STEP
     return sorted(set(levels))
 
 ALERT_LEVELS = build_alert_levels()
@@ -143,7 +149,7 @@ ALERT_LEVELS = build_alert_levels()
 def extend_ladder(idx):
     """Extend ALERT_LEVELS dynamically if needed."""
     while idx >= len(ALERT_LEVELS):
-        ALERT_LEVELS.append(ALERT_LEVELS[-1] + TIER3_STEP)
+        ALERT_LEVELS.append(ALERT_LEVELS[-1] + TIER4_STEP)
  
 # ─────────────────────────────────────────────
 #  Telegram helpers
@@ -526,8 +532,10 @@ def alert_monitor():
                     tier_label = "🟢 First Profit Milestone"
                 elif next_level <= TIER2_MAX:
                     tier_label = "🔵 Profit Milestone"
+                elif next_level <= TIER3_MAX:
+                    tier_label = "🟡 Major Profit Milestone"
                 else:
-                    tier_label = "🏆 Major Profit Milestone"
+                    tier_label = "🏆 Exceptional Profit Milestone"
 
                 msg = (
                     f"{tier_label} — <b>{ticker}</b>\n\n"
