@@ -148,9 +148,11 @@ ALERT_LEVELS = build_alert_levels()
 
 def extend_ladder(idx):
     """Extend ALERT_LEVELS dynamically if needed."""
+    """
     while idx >= len(ALERT_LEVELS):
         ALERT_LEVELS.append(ALERT_LEVELS[-1] + TIER4_STEP)
- 
+    """
+    return
 # ─────────────────────────────────────────────
 #  Telegram helpers
 # ─────────────────────────────────────────────
