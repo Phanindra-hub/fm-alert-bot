@@ -524,7 +524,9 @@ def alert_monitor():
 
             # ── Alert ladder (FIXED — no duplicates, no skips) ─────
             while True:
-                extend_ladder(idx)
+                if idx >= len(ALERT_LEVELS):
+                    print(f"  🏁 {ticker} reached max configured alert ladder")
+                    break
                 next_level = ALERT_LEVELS[idx]
 
                 if profit < next_level:
