@@ -460,7 +460,7 @@ def alert_monitor():
     cst = pytz.timezone(TIMEZONE)
     print("[Monitor] Thread started ✅")
 
-    BUFFER = 50  # prevents micro-fluctuation freezes
+    #BUFFER = 50  # prevents micro-fluctuation freezes
 
     # Brief delay so listener can do first pass first
     time.sleep(10)
@@ -494,7 +494,7 @@ def alert_monitor():
                 hwm      = cfg["high_water"]
                 frozen   = cfg["frozen"]
                 idx      = cfg["next_alert_idx"]
-
+            BUFFER = max(50, hwm * 0.035)
             profit = (price - entry) * qty
             pct    = ((price - entry) / entry) * 100
 
