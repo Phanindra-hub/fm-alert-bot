@@ -266,14 +266,33 @@ def extract_quantity(text):
         return int(qty.group(1)) if qty else None
     return None
 
-
+"""
 def extract_entry_price(text):
     added_match = re.search(r'ADDED\s+AT\s*\$?\s*(\d+)', text)
     if added_match:
         return float(added_match.group(1))
     prices = re.findall(r'\$\s*(\d+(?:\.\d+)?)', text)
     return float(prices[0]) if prices else None
+"""
 
+
+def extract_entry_price(text):
+    # Priority 1: ADDED AT $price
+    added_match = re.search(r'ADDED\s+AT\s*\$?\s*(\d+(?:\.\d+)?)\+?', text)
+    if added_match:
+        return float(added_match.group(1))
+    # Priority 2: I AM BUYING qty TICKER $price  (price right after ticker)
+    ticker_price = re.search(r'I\s+AM\s+BUYING\s+\d+\s+[A-Z]+\s*\$?\s*(\d+(?:\.\d+)?)\+?', text)
+    if ticker_price:
+        return float(ticker_price.group(1))
+    # Priority 3: I AM BUYING qty TICKER AT $price
+    buying_at = re.search(r'I\s+AM\s+BUYING\s+\d+\s+[A-Z]+\s+AT\s*\$?\s*(\d+(?:\.\d+)?)\+?', text)
+    if buying_at:
+        return float(buying_at.group(1))
+    # Last resort: first $ in message
+    prices = re.findall(r'\$\s*(\d+(?:\.\d+)?)', text)
+    return float(prices[0]) if prices else None
+    
 
 def extract_buy_date(text):
     """Try to extract a date from the message, fallback to today."""
