@@ -92,8 +92,8 @@ def is_market_hours():
 
     return start <= now <= end
  
-STATE_FILE = "/data/bot_state.json"
-
+STATE_FILE = "/data/bot_statev1.json"
+"""
 if os.path.exists(STATE_FILE):
     with open(STATE_FILE, "r") as f:
         data = json.load(f)
@@ -103,7 +103,7 @@ if os.path.exists(STATE_FILE):
     print("===== STATE JSON BACKUP END =====\n")
 else:
     print("STATE FILE NOT FOUND")
-
+"""
 def save_state():
     try:
         with watchlist_lock:
