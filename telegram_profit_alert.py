@@ -195,7 +195,7 @@ def acknowledge_update(update_id: int):
 # ─────────────────────────────────────────────
 
 def get_current_price(ticker: str):
-    if ticker=='AMD':
+    if ticker=='SNXX':
         return None
     try:
         pos   = trading_client.get_open_position(ticker)
