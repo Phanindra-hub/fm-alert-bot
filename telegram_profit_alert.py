@@ -377,7 +377,7 @@ def add_to_watchlist(trade: dict):
     action = "Updated" if existing else "Added"
     print(f"  [{action}] {ticker} | Entry: ${trade['entry']:.2f} | "
           f"Qty: {trade['qty']} | update_id: {update_id}")
-
+    """
     send_telegram_message(
         f"📥 <b>New Position Tracked — {ticker}</b>\n\n"
         f"📌 Entry Price: <b>${trade['entry']:.2f}</b>\n"
@@ -386,7 +386,7 @@ def add_to_watchlist(trade: dict):
         f"🔜 First alert at <b>$800 profit</b>\n\n"
         f"#FortuneMarkers #{ticker}"
     )
-
+    """
     # ✅ SAVE STATE (CRITICAL)
     save_state()
  
