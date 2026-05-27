@@ -546,28 +546,26 @@ def alert_monitor():
                 print(f"  ❄️  {ticker} frozen — profit dropped from ${hwm:,.2f} to ${profit:+,.2f}")
                 continue
 
-            # ── Alert ladder (FIXED — no duplicates, no skips) ─────
-            while True:
-                if idx >= len(ALERT_LEVELS):
-                    print(f"  🏁 {ticker} reached max configured alert ladder")
-                    break
-                next_level = ALERT_LEVELS[idx]
-
-                if profit < next_level:
-                    break
-
-                if next_level == FIRST_ALERT:
+            # ── Alert ladder — fires only highest milestone crossed ─
+            # Find highest level crossed this cycle
+            highest_level = None
+            while idx < len(ALERT_LEVELS) and profit >= ALERT_LEVELS[idx]:
+                highest_level = ALERT_LEVELS[idx]
+                idx += 1
+            
+            if idx > WATCHLIST[ticker]["next_alert_idx"] and highest_level is not None:
+                if highest_level == FIRST_ALERT:
                     tier_label = "🟢 First Profit Milestone"
-                elif next_level <= TIER2_MAX:
+                elif highest_level <= TIER2_MAX:
                     tier_label = "🔵 Profit Milestone"
-                elif next_level <= TIER3_MAX:
+                elif highest_level <= TIER3_MAX:
                     tier_label = "🟡 Major Profit Milestone"
                 else:
                     tier_label = "🏆 Exceptional Profit Milestone"
-
+            
                 msg = (
                     f"{tier_label} — <b>{ticker}</b>\n\n"
-                    f"💵 Profit has reached <b>${next_level:,.0f}</b>!\n\n"
+                    f"💵 Profit has reached <b>${highest_level:,.0f}</b>!\n\n"
                     f"📌 Entry Price:   <b>${entry:.2f}</b>\n"
                     f"💰 Current Price: <b>${price:.2f}</b>\n"
                     f"📦 Quantity:      <b>{qty} shares</b>\n"
@@ -577,16 +575,17 @@ def alert_monitor():
                     f"🕐 {now}\n"
                     f"#FortuneMarkers #{ticker}"
                 )
-
+            
                 send_telegram_message(msg)
-                print(f"  → 🚨 Alert sent: {ticker} profit crossed ${next_level:,}")
-
-                # ✅ update state safely
+                print(f"  → 🚨 Alert sent: {ticker} profit crossed ${highest_level:,}")
+            
                 with watchlist_lock:
-                    WATCHLIST[ticker]["next_alert_idx"] += 1
-                    idx += 1
-
-                save_state()  # ✅ critical
+                    WATCHLIST[ticker]["next_alert_idx"] = idx
+            
+                save_state()
+            
+            elif idx >= len(ALERT_LEVELS):
+                print(f"  🏁 {ticker} reached max configured alert ladder")
 
         time.sleep(MONITOR_INTERVAL)
  
