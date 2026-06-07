@@ -415,13 +415,14 @@ def purge_old_picks():
 
     for ticker, age in removed:
         print(f"  🗑️  Removed {ticker} — {age} days old (limit: {MAX_PICK_AGE_DAYS})")
+        """
         send_telegram_message(
             f"🗑️ <b>Pick Expired — {ticker}</b>\n\n"
             f"Automatically removed after <b>{age} days</b> "
             f"(limit: {MAX_PICK_AGE_DAYS} days).\n\n"
             f"#FortuneMarkers #{ticker}"
         )
-
+        """
     if removed:
         save_state()
 
