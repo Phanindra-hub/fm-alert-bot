@@ -515,15 +515,22 @@ def alert_monitor():
 
                 entry    = cfg["entry"]
                 qty      = cfg["qty"]
+                side     = cfg.get("side", "LONG").upper()
                 buy_date = cfg["buy_date"]
                 hwm      = cfg["high_water"]
                 frozen   = cfg["frozen"]
                 idx      = cfg["next_alert_idx"]
             BUFFER = max(50, hwm * 0.035)
-            profit = (price - entry) * qty
-            pct    = ((price - entry) / entry) * 100
+            # Calculate P&L according to position direction
+            if side == "SHORT":
+                profit = (entry - price) * qty
+                pct    = ((entry - price) / entry) * 100
+            else:
+                profit = (price - entry) * qty
+                pct    = ((price - entry) / entry) * 100
 
             print(f"[Monitor] {ticker}: ${price:.2f} | "
+                  f"Side: {side} | "
                   f"P&L: ${profit:+,.2f} ({pct:+.2f}%) | "
                   f"HWM: ${hwm:,.2f} | Frozen: {frozen}")
 
